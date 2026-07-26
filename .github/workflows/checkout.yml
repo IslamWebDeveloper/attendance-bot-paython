@@ -1,0 +1,43 @@
+name: Odoo Daily Auto Checkout Bot
+
+on:
+  schedule:
+    # Schedule: 5:00 PM Saudi Arabia Time (Asia/Riyadh, GMT+3)
+    # 5:00 PM AST = 14:00 UTC
+    # Runs Sunday through Thursday (Saudi work week)
+    - cron: '0 14 * * 0-4'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  auto-checkout:
+    name: Execute Attendance Checkout
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v5
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright requests beautifulsoup4
+
+      - name: 🌐 Install Playwright Browsers & System Dependencies
+        run: |
+          python -m playwright install chromium --with-deps
+
+      - name: 🚀 Run Auto Checkout Bot
+        env:
+          ERP_URL: ${{ secrets.ERP_URL || 'https://techsup-erp.com/my/attendance' }}
+          ERP_EMAIL: ${{ secrets.ERP_EMAIL }}
+          ERP_PASSWORD: ${{ secrets.ERP_PASSWORD }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python checkout.py
