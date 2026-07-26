@@ -7,9 +7,20 @@ from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-ERP_URL = os.getenv("ERP_URL", "https://techsup-erp.com/my/attendance").rstrip('/')
-EMAIL = os.getenv("ERP_EMAIL", "Islam@techsupbusiness.com")
-PASSWORD = os.getenv("ERP_PASSWORD", "Ii@123123")
+ERP_URL = (os.getenv("ERP_URL") or "https://techsup-erp.com/my/attendance").rstrip('/')
+EMAIL = os.getenv("ERP_EMAIL") or "Islam@techsupbusiness.com"
+PASSWORD = os.getenv("ERP_PASSWORD") or "Ii@123123"
+
+
+def _get_base_url(url: str) -> str:
+    if url.endswith("/my/attendance"):
+        return url[: -len("/my/attendance")]
+    return url
+
+
+ERP_BASE_URL = _get_base_url(ERP_URL)
+LOGIN_URL = f"{ERP_BASE_URL}/web/login?redirect=/my/attendance"
+ATTENDANCE_URL = f"{ERP_BASE_URL}/my/attendance"
 
 def run_checkout_requests():
     logging.info("Starting lightweight HTTP session checkout...")
@@ -19,9 +30,8 @@ def run_checkout_requests():
     })
 
     # Step 1: GET Login Page to get CSRF Token
-    login_url = f"{ERP_URL}/web/login?redirect=/my/attendance"
-    logging.info(f"Fetching login page: {login_url}")
-    res = session.get(login_url)
+    logging.info(f"Fetching login page: {LOGIN_URL}")
+    res = session.get(LOGIN_URL)
     if res.status_code != 200:
         logging.error(f"Failed to fetch login page. Status: {res.status_code}")
         sys.exit(1)
@@ -49,7 +59,7 @@ def run_checkout_requests():
     login_res = session.post(f"{ERP_URL}/web/login", data=payload)
     
     # Step 3: GET Attendance Portal Page
-    att_res = session.get(f"{ERP_URL}/my/attendance")
+    att_res = session.get(ATTENDANCE_URL)
     att_soup = BeautifulSoup(att_res.text, "html.parser")
 
     # Step 4: Locate Checkout Form & CSRF Token

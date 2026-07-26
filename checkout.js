@@ -1,8 +1,16 @@
 import { chromium } from 'playwright';
 
-const ERP_URL = process.env.ERP_URL || 'https://techsup-erp.com/my/attendance';
+const ERP_URL = (process.env.ERP_URL || 'https://techsup-erp.com/my/attendance').replace(/\/$/, '');
 const EMAIL = process.env.ERP_EMAIL || 'Islam@techsupbusiness.com';
 const PASSWORD = process.env.ERP_PASSWORD || 'Ii@123123';
+
+function getBaseUrl(url) {
+  return url.endsWith('/my/attendance') ? url.slice(0, -'/my/attendance'.length) : url;
+}
+
+const ERP_BASE_URL = getBaseUrl(ERP_URL);
+const LOGIN_PAGE_URL = `${ERP_BASE_URL}/web/login?redirect=/my/attendance`;
+const ATTENDANCE_PAGE_URL = `${ERP_BASE_URL}/my/attendance`;
 
 async function main() {
   console.log('🚀 Starting Odoo Auto Checkout Bot (Node Playwright)...');
@@ -31,9 +39,8 @@ async function main() {
   });
 
   try {
-    const loginUrl = `${ERP_URL}/web/login?redirect=/my/attendance`;
-    console.log(`🔗 Navigating to: ${loginUrl}`);
-    await page.goto(loginUrl, { waitUntil: 'networkidle' });
+    console.log(`🔗 Navigating to: ${LOGIN_PAGE_URL}`);
+    await page.goto(LOGIN_PAGE_URL, { waitUntil: 'networkidle' });
 
     console.log('🔑 Entering credentials...');
     await page.fill('input[name="login"], #login', EMAIL);

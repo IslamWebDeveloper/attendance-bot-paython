@@ -12,9 +12,20 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
-ERP_URL = os.getenv("ERP_URL", "https://techsup-erp.com/my/attendance")
-EMAIL = os.getenv("ERP_EMAIL", "Islam@techsupbusiness.com")
-PASSWORD = os.getenv("ERP_PASSWORD", "Ii@123123")
+ERP_URL = (os.getenv("ERP_URL") or "https://techsup-erp.com/my/attendance").rstrip("/")
+EMAIL = os.getenv("ERP_EMAIL") or "Islam@techsupbusiness.com"
+PASSWORD = os.getenv("ERP_PASSWORD") or "Ii@123123"
+
+
+def _get_base_url(url: str) -> str:
+    if url.endswith("/my/attendance"):
+        return url[: -len("/my/attendance")]
+    return url
+
+
+ERP_BASE_URL = _get_base_url(ERP_URL)
+LOGIN_PAGE_URL = f"{ERP_BASE_URL}/web/login?redirect=/my/attendance"
+ATTENDANCE_PAGE_URL = f"{ERP_BASE_URL}/my/attendance"
 
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
@@ -64,9 +75,8 @@ async def run_checkout():
         page.on("dialog", lambda dialog: asyncio.create_task(dialog.accept()))
 
         try:
-            login_page_url = f"{ERP_URL}/web/login?redirect=/my/attendance"
-            logging.info(f"Navigating to login page: {login_page_url}")
-            await page.goto(login_page_url, wait_until="networkidle", timeout=30000)
+            logging.info(f"Navigating to login page: {LOGIN_PAGE_URL}")
+            await page.goto(LOGIN_PAGE_URL, wait_until="networkidle", timeout=30000)
 
             # Fill in credentials
             logging.info("Filling in login credentials...")
