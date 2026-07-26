@@ -84,12 +84,20 @@ async def run_checkout():
             await page.fill('input[name="login"], #login', EMAIL)
             await page.fill('input[name="password"], #password', PASSWORD)
 
-            # Click login button
+            # Submit the actual login form instead of the first generic submit button.
             logging.info("Submitting login form...")
-            await page.click('button[type="submit"]')
+            login_form = page.locator("form:has(input[name='login'])").first
+            await login_form.wait_for(timeout=10000)
+            try:
+                await login_form.evaluate("form => form.requestSubmit()")
+            except Exception:
+                login_button = page.locator(
+                    "form:has(input[name='login']) button[type='submit'], form:has(input[name='login']) input[type='submit']"
+                ).first
+                await login_button.click(timeout=10000)
 
             # Wait for attendance page load
-            await page.wait_for_url("**/my/attendance*", timeout=20000)
+            await page.wait_for_url("**/my/attendance*", timeout=30000)
             logging.info("Successfully logged in and reached Attendance Portal.")
 
             # Check status on the page

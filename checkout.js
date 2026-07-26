@@ -46,10 +46,18 @@ async function main() {
     await page.fill('input[name="login"], #login', EMAIL);
     await page.fill('input[name="password"], #password', PASSWORD);
 
-    console.log('👆 Clicking login button...');
-    await page.click('button[type="submit"]');
+    console.log('👆 Submitting login form...');
+    const loginForm = page.locator("form:has(input[name='login'])").first();
+    await loginForm.waitFor({ timeout: 10000 });
 
-    await page.waitForURL('**/my/attendance*', { timeout: 20000 });
+    try {
+      await loginForm.evaluate((form) => form.requestSubmit());
+    } catch {
+      const loginButton = page.locator("form:has(input[name='login']) button[type='submit'], form:has(input[name='login']) input[type='submit']").first();
+      await loginButton.click({ timeout: 10000 });
+    }
+
+    await page.waitForURL('**/my/attendance*', { timeout: 30000 });
     console.log('✅ Navigated to Attendance Portal.');
 
     const checkoutBtn = page.locator('form[action*="/my/attendance/checkout"] button[type="submit"]');
